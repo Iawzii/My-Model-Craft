@@ -1,0 +1,166 @@
+<template>
+  <div class="flex flex-col">
+    <section>
+      <div class="container mx-auto px-8 py-4 max-w-6xl">
+        <nav class="text-1xl text-gray-600">
+          <router-link to="/" class="hover:underline">主页</router-link>
+          <span class="mx-2">></span>
+          <span class="text-gray-900">注册</span>
+        </nav>
+      </div>
+    </section>
+    <section>
+      <div class="container mx-auto px-8">
+        <div class="min-h-[700px] flex items-center justify-center">
+          <div class="bg-white p-6 sm:p-8 rounded-lg shadow-md w-full max-w-md">
+            <!--提示信息-->
+            <div v-if="errorMessage" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">{{ errorMessage }}</div>
+            <div v-if="successMessage" class="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">{{ successMessage }}</div>
+            <!-- Logo部分 -->
+            <div class="flex justify-center mb-4">
+              <router-link to="/" class="flex items-center space-x-2 text-blue-600">
+              <span class="text-xl font-semibold">3D Model Website</span>
+              </router-link>
+            </div>
+
+            <!-- 表单部分 -->
+            <h2 class="text-2xl sm:text-3xl font-bold text-center mb-6">注册</h2>
+            <form @submit.prevent="handleRegister">
+              <!-- 用户名输入框 -->
+              <div class="mb-4">
+                <input type="text" id="username" v-model="username" class="w-full p-3 border rounded-lg focus:outline-none" placeholder="请输入用户名" required />
+              </div>
+
+              <!-- 邮箱输入框 -->
+              <div class="mb-4">
+                <input type="email" id="email" v-model="email" class="w-full p-3 border rounded-lg focus:outline-none" placeholder="请输入邮箱" required />
+              </div>
+
+              <!-- 验证码输入框 -->
+              <div class="mb-4 flex items-center">
+                <input type="text" id="verificationCode" v-model="verificationCode" @input="handleCodeInput" class="w-2/3 p-3 border rounded-lg focus:outline-none" placeholder="请输入邮箱验证码" required />
+                <button type="button" class="ml-2 text-white bg-blue-600 rounded-lg px-4 py-2" @click="sendVerificationCode" :disabled="codeCountDown > 0">
+                {{ codeCountDown > 0 ? `${codeCountDown}秒` : '发送验证码' }}</button>
+              </div>
+
+              <!-- 密码输入框 -->
+              <div class="mb-6">
+                <input type="password" id="password" v-model="password" class="w-full p-3 border rounded-lg focus:outline-none" placeholder="请输入密码" required />
+              </div>
+
+              <!-- 注册按钮 -->
+              <button type="submit" class="w-full py-3 text-white bg-blue-600 rounded-lg hover:bg-blue-700">
+                注册
+              </button>
+            </form>
+
+            <div class="mt-4 text-center">
+              <span class="text-sm text-gray-600">已有账户？</span>
+              <router-link to="/login" class="text-sm text-blue-600">登录账户</router-link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</template>
+
+<script setup>
+import { ref, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+
+const authStore = useAuthStore()
+const router = useRouter()
+
+const username = ref('')
+const email = ref('')
+const verificationCode = ref('')
+const password = ref('')
+const errorMessage = ref('')
+const successMessage = ref('')
+const codeCountDown = ref(0)
+let countDownTimer = null
+
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+// 验证码输入格式化（只允许数字）
+const handleCodeInput = (e) => {
+  const value = e.target.value.replace(/\D/g, '')
+  verificationCode.value = value
+}
+
+const sendVerificationCode = async () => {
+  errorMessage.value = ''
+  successMessage.value = ''
+  if (!email.value) {
+    errorMessage.value = '请先输入邮箱'
+    return
+  }
+
+  if (!emailRegex.test(email.value)) {
+    errorMessage.value = '请输入正确的邮箱地址'
+    return
+  }
+  if (codeCountDown.value > 0) return
+    const res = await authStore.sendVerificationCode(email.value) 
+    if (res.success) {
+      successMessage.value = '验证码发送成功'
+      codeCountDown.value = 60
+      countDownTimer = setInterval(() => {
+        if (codeCountDown.value <= 1) {
+          clearInterval(countDownTimer)
+          countDownTimer = null
+          codeCountDown.value = 0
+        } else {
+          codeCountDown.value--
+        }
+      }, 1000)
+    } else {
+      errorMessage.value = res.message
+    }
+}
+
+const handleRegister = async () => {
+  errorMessage.value = ''
+  successMessage.value = ''
+  // 前端验证：输入项
+  if (!username.value || !email.value || !verificationCode.value || !password.value) {
+    errorMessage.value = '请填写所有必填项'
+    return
+  }
+
+  // 前端验证：密码长度
+  if (password.value.length < 6) {
+    errorMessage.value = '密码长度至少6位'
+    return
+  }
+
+  // 前端验证：验证码格式
+  if (!verificationCode.value || verificationCode.value.length !== 6) {
+    errorMessage.value = '请输入6位验证码'
+    return
+  }
+    const res = await authStore.registerAccount({
+      username: username.value,
+      email: email.value,
+      password: password.value,
+      code: verificationCode.value,
+      bio: bio.value || undefined
+    })
+    if (res.success) {
+      successMessage.value = '注册成功'
+      router.push('/login')
+    } else {
+      errorMessage.value = res.message
+    }
+}
+
+onUnmounted(() => {
+  if (countDownTimer) {
+    clearInterval(countDownTimer)
+  }
+})
+
+</script>
+

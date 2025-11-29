@@ -1,0 +1,30 @@
+import { createRouter, createWebHistory } from 'vue-router'
+import HomePage from '@/views/HomePage.vue'
+import SearchResult from '@/views/SearchResult.vue'
+import ModelDetail from '@/views/ModelDetail.vue'
+import LoginPage from '@/views/LoginPage.vue'
+import RegisterPage from '@/views/RegisterPage.vue'
+import UserSettings from '@/views/UserSettings.vue'
+import UserPage from '@/views/UserPage.vue'
+import ForgotPassword from '@/views/ForgotPassword.vue'
+import ResetPassword from '@/views/ResetPassword.vue'
+// TODO: 添加其他路由
+
+const routes = [
+  { path: '/', component: HomePage },
+  { path: '/search', component: SearchResult },
+  { path: '/model/:id', component: ModelDetail },
+  { path: '/login', component: LoginPage },
+  { path: '/register', component: RegisterPage },
+  { path: '/forgot-password', component: ForgotPassword },
+  { path: '/reset-password', component: ResetPassword },
+  { path: '/user', component: UserPage },
+  { path: '/settings/user', component: UserSettings }
+]
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes
+})
+
+export default router

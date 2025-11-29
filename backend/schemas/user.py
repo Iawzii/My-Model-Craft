@@ -17,6 +17,31 @@ class UserCreate(UserBase):
     code: str
 
 
+class UserProfileUpdate(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+    avatarUrl: Optional[str] = None
+    bio: Optional[str] = None
+
+
+class UsernameUpdate(BaseModel):
+    username: str
+
+
+class EmailUpdate(BaseModel):
+    email: EmailStr
+
+
+class AvatarUpdate(BaseModel):
+    avatarUrl: Optional[str] = None
+
+
+class BioUpdate(BaseModel):
+    bio: Optional[str] = None
+
+
 class UserOut(UserBase):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
