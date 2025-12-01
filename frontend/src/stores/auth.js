@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import router from '@/router'
-import { authApi } from '@/api'
+import { authApi, usersApi } from '@/api'
 
 const parseUser = () => {
   try {
@@ -16,13 +16,15 @@ export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: parseUser(),
     token: localStorage.getItem('token'),
-    isLoggedIn: !!localStorage.getItem('token')
+    isLoggedIn: !!localStorage.getItem('token'),
+    isHydratingUser: false
   }),
 
   getters: {
     username: (state) => state.user?.username || '',
     avatarUrl: (state) => state.user?.avatarUrl || null,
-    email: (state) => state.user?.email || ''
+    email: (state) => state.user?.email || '',
+    userId: (state) => state.user?.id || state.user?._id || ''
   },
 
   actions: {
@@ -39,6 +41,33 @@ export const useAuthStore = defineStore('auth', {
         localStorage.setItem('user', JSON.stringify(user))
       } else {
         localStorage.removeItem('user')
+      }
+    },
+
+    async fetchCurrentUser(force = false) {
+      if (!this.token) {
+        return null
+      }
+      if (this.isHydratingUser) {
+        return this.user
+      }
+      if (this.user && !force) {
+        return this.user
+      }
+
+      this.isHydratingUser = true
+      try {
+        const { data } = await usersApi.getMe()
+        this.setSession(this.token, data)
+        return data
+      } catch (error) {
+        console.warn('Failed to fetch current user profile', error)
+        if (error?.original?.response?.status === 401) {
+          this.logoutAccount()
+        }
+        throw error
+      } finally {
+        this.isHydratingUser = false
       }
     },
 
@@ -65,6 +94,11 @@ export const useAuthStore = defineStore('auth', {
         const { data } = await authApi.login({ email, password })
         if (data?.access_token) {
           this.setSession(data.access_token, data.user)
+          try {
+            await this.fetchCurrentUser(true)
+          } catch (error) {
+            console.warn('Using login payload as fallback user info')
+          }
           return { success: true, message: '登录成功' }
         }
         return { success: false, message: '登录失败，请稍后重试' }
@@ -82,6 +116,7 @@ export const useAuthStore = defineStore('auth', {
       try {
         const { data } = await authApi.updateProfile(updates)
         this.setSession(this.token, data)
+        await this.fetchCurrentUser(true).catch(() => {})
         return { success: true, message: '资料更新成功', data }
       } catch (error) {
         return { success: false, message: error.message }
@@ -92,6 +127,7 @@ export const useAuthStore = defineStore('auth', {
       try {
         const { data } = await authApi.updateUsername({ username })
         this.setSession(this.token, data)
+        await this.fetchCurrentUser(true).catch(() => {})
         return { success: true, message: '用户名更新成功', data }
       } catch (error) {
         return { success: false, message: error.message }
@@ -102,6 +138,7 @@ export const useAuthStore = defineStore('auth', {
       try {
         const { data } = await authApi.updateEmail({ email })
         this.setSession(this.token, data)
+        await this.fetchCurrentUser(true).catch(() => {})
         return { success: true, message: '邮箱更新成功', data }
       } catch (error) {
         return { success: false, message: error.message }
@@ -123,6 +160,7 @@ export const useAuthStore = defineStore('auth', {
       try {
         const { data } = await authApi.updateAvatar({ avatarUrl })
         this.setSession(this.token, data)
+        await this.fetchCurrentUser(true).catch(() => {})
         return { success: true, message: '头像更新成功', data }
       } catch (error) {
         return { success: false, message: error.message }
@@ -133,6 +171,7 @@ export const useAuthStore = defineStore('auth', {
       try {
         const { data } = await authApi.updateBio({ bio })
         this.setSession(this.token, data)
+        await this.fetchCurrentUser(true).catch(() => {})
         return { success: true, message: '简介更新成功', data }
       } catch (error) {
         return { success: false, message: error.message }

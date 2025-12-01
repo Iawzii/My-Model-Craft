@@ -48,3 +48,15 @@ def get_current_user(
         raise credentials_exception
 
     return user
+
+
+def get_optional_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(http_bearer),
+    db: Session = Depends(get_db),
+) -> User | None:
+    """Return the authenticated user when a valid bearer token is present."""
+
+    if not credentials or credentials.scheme.lower() != "bearer":
+        return None
+
+    return get_current_user(credentials=credentials, db=db)

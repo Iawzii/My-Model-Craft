@@ -25,8 +25,14 @@
       </div>
       <!-- 登录后样式 -->
       <div v-else class="flex items-center space-x-6 md:space-x-10 whitespace-nowrap">
+        <router-link
+          to="/upload"
+          class="hidden md:inline-flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700"
+        >
+          上传模型
+        </router-link>
         <!-- 用户头像和用户名 -->
-        <router-link to="/user" class="flex items-center gap-2 whitespace-nowrap">
+        <router-link :to="`/user/${authStore.userId}`" class="flex items-center gap-2 whitespace-nowrap">
           <div class="w-8 h-8 rounded-full bg-blue-500 text-white text-sm font-semibold flex items-center justify-center">
             <span v-if="!authStore.avatarUrl">{{ avatarInitial }}</span>
             <img v-else :src="authStore.avatarUrl" :alt="authStore.username" class="w-full h-full rounded-full object-cover" />

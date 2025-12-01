@@ -53,7 +53,18 @@ class AvatarUploadResponse(BaseModel):
 class UserOut(UserBase):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-    id: UUID = Field(alias="_id")
+    id: UUID = Field(
+        validation_alias=AliasChoices("id", "_id"),
+        serialization_alias="id",
+    )
     followers: list[UUID] = Field(default_factory=list)
     following: list[UUID] = Field(default_factory=list)
     createdAt: datetime = Field(alias="created_at")
+
+
+class UserProfileResponse(UserOut):
+    followersCount: int
+    followingCount: int
+    modelCount: int
+    isSelf: bool = False
+    isFollowing: bool = False

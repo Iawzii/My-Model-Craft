@@ -33,7 +33,30 @@ export default api
 export const modelsApi = {
   recommend: () => api.get('/api/models/recommend'),
   search: (params) => api.get('/api/search', { params }),
-  getById: (id) => api.get(`/api/models/${id}`)
+  getById: (id) => api.get(`/api/models/${id}`),
+  listRecent: (params = {}) => api.get('/api/models', { params }),
+  create: (payload) => api.post('/api/models', payload),
+  uploadModelFile: (file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post('/api/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  },
+  uploadThumbnail: (file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post('/api/upload/thumbnail', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  },
+  uploadPreviews: (files) => {
+    const formData = new FormData()
+    files.forEach((file) => formData.append('files', file))
+    return api.post('/api/upload/previews', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  }
 }
 
 export const authApi = {
@@ -52,4 +75,11 @@ export const authApi = {
   updateAvatar: (payload) => api.patch('/api/settings/user/avatar', payload),
   updateBio: (payload) => api.patch('/api/settings/user/bio', payload),
   changePassword: (payload) => api.post('/api/settings/user/password', payload)
+}
+
+export const usersApi = {
+  getById: (id) => api.get(`/api/users/${id}`),
+  getMe: () => api.get('/api/users/me'),
+  follow: (id) => api.post(`/api/users/${id}/follow`),
+  unfollow: (id) => api.delete(`/api/users/${id}/follow`)
 }

@@ -38,21 +38,22 @@ import { useModelsStore } from '@/stores/models'
 import ModelCard from '@/components/ModelCard.vue'
 import ImageCarousel from '@/components/ImageCarousel.vue'
 
-import { mockModels } from '@/mock/model.js' // MOCK
-
 const router = useRouter()
 const modelsStore = useModelsStore()
 const recommendedModels = ref([])
 // const recommendedUsers = ref([]) // TODO
 
 const goToDetail = (id) => {
+  if (!id) return
   router.push(`/model/${id}`)
 }
 
 onMounted(async () => {
-  recommendedModels.value = mockModels // MOCK
-  modelsStore // remove later
-  // recommendedModels.value = await modelsStore.fetchRecommendedModels()
-  // recommendedUsers.value = await modelsStore.fetchRecommendedUsers() // TODO
+  try {
+    recommendedModels.value = await modelsStore.fetchRecentModels(12)
+  } catch (error) {
+    console.error('Failed to load models', error)
+    recommendedModels.value = []
+  }
 })
 </script>
