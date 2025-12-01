@@ -1,4 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import mimetypes
+import os
+import uuid
+from pathlib import Path
+
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 from sqlalchemy.orm import Session
 
 from core.dependencies import get_current_user
@@ -8,12 +13,17 @@ from db.session import get_db
 from schemas.auth import ChangePasswordRequest, MessageResponse
 from schemas.user import (
     AvatarUpdate,
+    AvatarUploadResponse,
     BioUpdate,
     EmailUpdate,
     UserOut,
     UserProfileUpdate,
     UsernameUpdate,
 )
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+AVATAR_DIR = BASE_DIR / "uploads" / "avatars"
+AVATAR_DIR.mkdir(parents=True, exist_ok=True)
 
 router = APIRouter(prefix="/settings/user", tags=["user-settings"])
 
@@ -101,7 +111,14 @@ def update_avatar(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    current_user.avatar_url = payload.avatarUrl
+    avatar_url = payload.avatarUrl or None
+    if avatar_url and len(avatar_url) > 500:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Avatar URL is too long.",
+        )
+
+    current_user.avatar_url = avatar_url
     db.commit()
     db.refresh(current_user)
     return current_user
@@ -117,6 +134,40 @@ def update_bio(
     db.commit()
     db.refresh(current_user)
     return current_user
+
+
+@router.post("/avatar/upload", response_model=AvatarUploadResponse)
+async def upload_avatar_file(
+    request: Request,
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+):
+    content_type = file.content_type or ""
+    if not content_type.startswith("image/"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only image files are supported.",
+        )
+
+    extension = mimetypes.guess_extension(content_type) or os.path.splitext(file.filename or "")[1]
+    if not extension:
+        extension = ".png"
+
+    filename = f"{uuid.uuid4().hex}{extension}"
+    destination = AVATAR_DIR / filename
+
+    try:
+        contents = await file.read()
+        destination.write_bytes(contents)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to save avatar.",
+        ) from exc
+
+    relative_path = f"avatars/{filename}"
+    avatar_url = request.url_for("uploads", path=relative_path)
+    return AvatarUploadResponse(url=str(avatar_url))
 
 
 @router.post("/password", response_model=MessageResponse)

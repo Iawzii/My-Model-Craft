@@ -42,6 +42,10 @@ export const authApi = {
   login: (payload) => api.post('/api/auth/login', payload),
   forgotPassword: (email) => api.post('/api/auth/forgot', { email }),
   resetPassword: (payload) => api.post('/api/auth/reset', payload),
+  uploadAvatar: (formData) =>
+    api.post('/api/settings/user/avatar/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    }),
   updateProfile: (payload) => api.patch('/api/settings/user', payload),
   updateUsername: (payload) => api.patch('/api/settings/user/username', payload),
   updateEmail: (payload) => api.patch('/api/settings/user/email', payload),

@@ -2,8 +2,6 @@ import { defineStore } from 'pinia'
 import router from '@/router'
 import { authApi } from '@/api'
 
-const DEFAULT_AVATAR = 'https://i.pravatar.cc/150'
-
 const parseUser = () => {
   try {
     const stored = localStorage.getItem('user')
@@ -23,7 +21,7 @@ export const useAuthStore = defineStore('auth', {
 
   getters: {
     username: (state) => state.user?.username || '',
-    avatarUrl: (state) => state.user?.avatarUrl || DEFAULT_AVATAR,
+    avatarUrl: (state) => state.user?.avatarUrl || null,
     email: (state) => state.user?.email || ''
   },
 
@@ -105,6 +103,17 @@ export const useAuthStore = defineStore('auth', {
         const { data } = await authApi.updateEmail({ email })
         this.setSession(this.token, data)
         return { success: true, message: '邮箱更新成功', data }
+      } catch (error) {
+        return { success: false, message: error.message }
+      }
+    },
+
+    async uploadAvatarFile(file) {
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+        const { data } = await authApi.uploadAvatar(formData)
+        return { success: true, data }
       } catch (error) {
         return { success: false, message: error.message }
       }

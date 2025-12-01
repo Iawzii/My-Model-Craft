@@ -49,3 +49,4 @@ wheels/
 .venv
 .env
 uvicorn.log
+uploads/

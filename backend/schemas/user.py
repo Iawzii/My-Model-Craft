@@ -2,13 +2,17 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, EmailStr, Field
 
 
 class UserBase(BaseModel):
     username: str
     email: EmailStr
-    avatarUrl: Optional[str] = None
+    avatarUrl: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("avatarUrl", "avatar_url"),
+        serialization_alias="avatarUrl",
+    )
     bio: Optional[str] = None
 
 
@@ -40,6 +44,10 @@ class AvatarUpdate(BaseModel):
 
 class BioUpdate(BaseModel):
     bio: Optional[str] = None
+
+
+class AvatarUploadResponse(BaseModel):
+    url: str
 
 
 class UserOut(UserBase):

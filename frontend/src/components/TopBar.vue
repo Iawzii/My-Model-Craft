@@ -27,11 +27,10 @@
       <div v-else class="flex items-center space-x-6 md:space-x-10 whitespace-nowrap">
         <!-- 用户头像和用户名 -->
         <router-link to="/user" class="flex items-center gap-2 whitespace-nowrap">
-        <img
-          :src="authStore.avatarUrl"
-          :alt="authStore.username"
-          class="w-8 h-8 rounded-full"
-        />
+          <div class="w-8 h-8 rounded-full bg-blue-500 text-white text-sm font-semibold flex items-center justify-center">
+            <span v-if="!authStore.avatarUrl">{{ avatarInitial }}</span>
+            <img v-else :src="authStore.avatarUrl" :alt="authStore.username" class="w-full h-full rounded-full object-cover" />
+          </div>
         </router-link>
         <!-- 退出登录按钮 -->
         <button
@@ -46,13 +45,18 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
 const query = ref('')
 const authStore = useAuthStore()
+
+const avatarInitial = computed(() => {
+  const name = authStore.username || ''
+  return name.charAt(0).toUpperCase() || 'U'
+})
 
 const emit = defineEmits(['search'])
 

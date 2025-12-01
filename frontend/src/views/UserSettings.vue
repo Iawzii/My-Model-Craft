@@ -185,8 +185,6 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 const authStore = useAuthStore()
 
-const DEFAULT_AVATAR = 'https://i.pravatar.cc/150'
-
 const avatarInput = ref(null)
 const avatarPreview = ref(null)
 const avatarMessage = ref('')
@@ -245,7 +243,7 @@ const syncState = () => {
   bio.value = user?.bio || ''
   email.value = user?.email || ''
   confirmEmail.value = user?.email || ''
-  avatarPreview.value = user?.avatarUrl && user.avatarUrl !== DEFAULT_AVATAR ? user.avatarUrl : null
+  avatarPreview.value = user?.avatarUrl || null
 }
 
 onMounted(() => {
@@ -263,28 +261,30 @@ watch(
   }
 )
 
-const readFileAsDataUrl = (file) =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result)
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
-
 const handleAvatarChange = async (event) => {
   const file = event.target.files?.[0]
   if (!file) return
   avatarMessage.value = ''
   avatarSaving.value = true
+  const tempUrl = URL.createObjectURL(file)
   try {
-    const base64 = await readFileAsDataUrl(file)
-    avatarPreview.value = base64
-    const result = await authStore.updateAvatar(base64)
+    avatarPreview.value = tempUrl
+    const uploadResult = await authStore.uploadAvatarFile(file)
+    if (!uploadResult.success) {
+      throw new Error(uploadResult.message || '头像上传失败')
+    }
+    const result = await authStore.updateAvatar(uploadResult.data.url)
+    avatarPreview.value = uploadResult.data.url
     avatarMessage.value = result.message
   } catch (error) {
     avatarMessage.value = error.message || '头像更新失败'
+    avatarPreview.value = authStore.user?.avatarUrl || null
   } finally {
     avatarSaving.value = false
+    URL.revokeObjectURL(tempUrl)
+    if (event?.target) {
+      event.target.value = ''
+    }
   }
 }
 
