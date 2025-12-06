@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from core.config import settings
@@ -146,10 +147,24 @@ def register_user(payload: RegisterRequest, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=LoginResponse)
 def login(payload: LoginRequest, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == payload.email).first()
+    identifier = payload.identifier.strip()
+    identifier_lower = identifier.lower()
+
+    user = (
+        db.query(User)
+        .filter(
+            or_(
+                func.lower(User.email) == identifier_lower,
+                func.lower(User.username) == identifier_lower,
+            )
+        )
+        .first()
+    )
+
     if not user or not verify_password(payload.password, user.password_hash):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password."
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid username/email or password.",
         )
 
     token = create_access_token({"sub": str(user.id)})

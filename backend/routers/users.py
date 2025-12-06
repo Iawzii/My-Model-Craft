@@ -1,13 +1,13 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from core.dependencies import get_current_user, get_optional_current_user
 from db.models import Model, User
 from db.session import get_db
-from schemas.user import UserProfileResponse
+from schemas.user import UserProfileResponse, UserSummary
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -59,6 +59,45 @@ def get_me(
     db: Session = Depends(get_db),
 ):
     return _build_profile_response(current_user, db, current_user)
+
+
+@router.get("/lookup", response_model=list[UserSummary])
+def lookup_users(
+    ids: list[str] | None = Query(default=None, description="User IDs to lookup"),
+    db: Session = Depends(get_db),
+):
+    if not ids:
+        return []
+
+    parsed_ids: list[UUID] = []
+    for raw in ids:
+        parts = [part.strip() for part in raw.split(",")]
+        for part in parts:
+            if not part:
+                continue
+            try:
+                parsed_ids.append(UUID(part))
+            except ValueError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid user id: {part}",
+                ) from exc
+
+    if not parsed_ids:
+        return []
+
+    users = (
+        db.query(User)
+        .filter(User.id.in_(parsed_ids))
+        .all()
+    )
+    user_map = {user.id: user for user in users}
+    ordered_users: list[User] = []
+    for user_id in parsed_ids:
+        user = user_map.get(user_id)
+        if user:
+            ordered_users.append(user)
+    return ordered_users
 
 
 @router.get("/{user_id}", response_model=UserProfileResponse)

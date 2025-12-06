@@ -24,7 +24,7 @@ export const useAuthStore = defineStore('auth', {
     username: (state) => state.user?.username || '',
     avatarUrl: (state) => state.user?.avatarUrl || null,
     email: (state) => state.user?.email || '',
-    userId: (state) => state.user?.id || state.user?._id || ''
+    userid: (state) => state.user?.id || state.user?._id || ''
   },
 
   actions: {
@@ -89,9 +89,9 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    async loginAccount(email, password) {
+    async loginAccount(identifier, password) {
       try {
-        const { data } = await authApi.login({ email, password })
+        const { data } = await authApi.login({ identifier, password })
         if (data?.access_token) {
           this.setSession(data.access_token, data.user)
           try {

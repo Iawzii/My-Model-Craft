@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import AliasChoices, BaseModel, ConfigDict, EmailStr, Field
 
 from schemas.user import UserCreate, UserOut
 
@@ -22,7 +22,11 @@ class RegisterRequest(UserCreate):
 
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    identifier: str = Field(
+        min_length=1,
+        max_length=255,
+        validation_alias=AliasChoices("identifier", "email", "username"),
+    )
     password: str
 
 

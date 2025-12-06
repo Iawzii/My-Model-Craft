@@ -32,7 +32,7 @@
           上传模型
         </router-link>
         <!-- 用户头像和用户名 -->
-        <router-link :to="`/user/${authStore.userId}`" class="flex items-center gap-2 whitespace-nowrap">
+        <router-link :to="`/user/${authStore.userid}`" class="flex items-center gap-2 whitespace-nowrap">
           <div class="w-8 h-8 rounded-full bg-blue-500 text-white text-sm font-semibold flex items-center justify-center">
             <span v-if="!authStore.avatarUrl">{{ avatarInitial }}</span>
             <img v-else :src="authStore.avatarUrl" :alt="authStore.username" class="w-full h-full rounded-full object-cover" />

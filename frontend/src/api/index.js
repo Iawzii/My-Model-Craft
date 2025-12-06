@@ -81,5 +81,9 @@ export const usersApi = {
   getById: (id) => api.get(`/api/users/${id}`),
   getMe: () => api.get('/api/users/me'),
   follow: (id) => api.post(`/api/users/${id}/follow`),
-  unfollow: (id) => api.delete(`/api/users/${id}/follow`)
+  unfollow: (id) => api.delete(`/api/users/${id}/follow`),
+  lookup: (ids = []) => {
+    const filtered = ids.filter(Boolean)
+    return api.get('/api/users/lookup', { params: { ids: filtered.join(',') } })
+  }
 }

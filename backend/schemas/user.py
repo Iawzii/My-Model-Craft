@@ -62,6 +62,21 @@ class UserOut(UserBase):
     createdAt: datetime = Field(alias="created_at")
 
 
+class UserSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    id: UUID = Field(
+        validation_alias=AliasChoices("id", "_id"),
+        serialization_alias="id",
+    )
+    username: str
+    avatarUrl: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("avatarUrl", "avatar_url"),
+        serialization_alias="avatarUrl",
+    )
+
+
 class UserProfileResponse(UserOut):
     followersCount: int
     followingCount: int

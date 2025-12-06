@@ -28,11 +28,11 @@
             <form @submit.prevent="handleLogin">
               <div class="mb-4">
                 <input
-                  type="email"
-                  id="email"
-                  v-model="email"
+                  type="text"
+                  id="identifier"
+                  v-model="identifier"
                   class="w-full p-3 border rounded-lg focus:outline-none focus:border-blue-500"
-                  placeholder="请输入注册邮箱"
+                  placeholder="请输入邮箱或用户名"
                 />
               </div>
 
@@ -81,37 +81,33 @@ import { useAuthStore } from '@/stores/auth'
 const authStore = useAuthStore()
 const router = useRouter()
 
-const rememberedEmail = localStorage.getItem('rememberedEmail') || ''
-const email = ref(rememberedEmail)
+const rememberedIdentifier = localStorage.getItem('rememberedIdentifier') || localStorage.getItem('rememberedEmail') || ''
+const identifier = ref(rememberedIdentifier)
 const password = ref('')
-const rememberMe = ref(!!rememberedEmail)
+const rememberMe = ref(!!rememberedIdentifier)
 const errorMessage = ref('')
 const successMessage = ref('')
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 const handleLogin = async () => {
   errorMessage.value = ''
   successMessage.value = ''
   // 前端验证：输入项
-  if (!email.value || !password.value) {
-    errorMessage.value = '请填写所有必填项'
-    return
-  }
-
-  if (!emailRegex.test(email.value)) {
-    errorMessage.value = '请输入有效的邮箱地址'
+  if (!identifier.value || !password.value) {
+    errorMessage.value = '请输入邮箱/用户名与密码'
     return
   }
 
   const res = await authStore.loginAccount(
-    email.value,
+    identifier.value.trim(),
     password.value,
   )
   if (res.success) {
     successMessage.value = '登录成功'
     if (rememberMe.value) {
-      localStorage.setItem('rememberedEmail', email.value)
+      localStorage.setItem('rememberedIdentifier', identifier.value.trim())
+      localStorage.removeItem('rememberedEmail')
     } else {
+      localStorage.removeItem('rememberedIdentifier')
       localStorage.removeItem('rememberedEmail')
     }
     router.push('/')

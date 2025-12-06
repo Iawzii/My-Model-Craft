@@ -13,7 +13,7 @@ class Settings(BaseSettings):
 
     app_name: str = Field(default="Model Craft API", alias="APP_NAME")
     database_url: str = Field(alias="DATABASE_URL")
-    jwt_secret_key: str = Field(default="change-me", alias="JWT_SECRET_KEY")
+    jwt_secret_key: str = Field(alias="JWT_SECRET_KEY")
     jwt_algorithm: str = Field(default="HS256", alias="JWT_ALGORITHM")
     jwt_expires_minutes: int = Field(default=60 * 24, alias="JWT_EXPIRES_MINUTES")
     verification_code_length: int = Field(default=6, alias="VERIFICATION_CODE_LENGTH")
@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     smtp_host: str = Field(default="smtp.qq.com", alias="SMTP_HOST")
     smtp_port: int = Field(default=465, alias="SMTP_PORT")
     smtp_user: str = Field(alias="SMTP_USER")
-    smtp_password: str = Field(default="rriubslsfoslechg", alias="SMTP_PASSWORD")
+    smtp_password: str = Field(alias="SMTP_PASSWORD")
 
 
 settings = Settings()

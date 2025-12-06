@@ -51,9 +51,56 @@
             </div>
 
             <div class="text-center text-sm text-gray-500">
-              <div class="flex flex-col space-y-1">
-                <span>{{ profile?.followersCount ?? 0 }} 人关注 TA</span>
-                <span>{{ profile?.followingCount ?? 0 }} 正在关注</span>
+              <div class="flex flex-col space-y-2">
+                <div
+                  class="relative flex justify-center"
+                  @mouseleave="closeConnectionPanel('followers')"
+                  @mouseenter="handleConnectionHover('followers')"
+                >
+                  <button
+                    type="button"
+                    class="px-3 py-1 rounded-full border border-transparent hover:border-blue-200 hover:text-blue-600 transition-colors"
+                    @click="toggleConnectionPanel('followers')"
+                  >
+                    {{ profile?.followersCount ?? 0 }} 人关注 TA
+                  </button>
+                  <div
+                    v-if="activeConnectionType === 'followers'"
+                    class="absolute top-full left-1/2 -translate-x-1/2 mt-3 z-20"
+                  >
+                    <UserConnectionsPopover
+                      title="关注 TA 的用户"
+                      :users="connectionDetails.followers"
+                      :loading="connectionLoading.followers"
+                      empty-text="还没有粉丝"
+                    />
+                  </div>
+                </div>
+
+                <div
+                  class="relative flex justify-center"
+                  @mouseleave="closeConnectionPanel('following')"
+                  @mouseenter="handleConnectionHover('following')"
+                >
+                  <button
+                    type="button"
+                    class="px-3 py-1 rounded-full border border-transparent hover:border-blue-200 hover:text-blue-600 transition-colors"
+                    @click="toggleConnectionPanel('following')"
+                  >
+                    {{ profile?.followingCount ?? 0 }} 正在关注
+                  </button>
+                  <div
+                    v-if="activeConnectionType === 'following'"
+                    class="absolute top-full left-1/2 -translate-x-1/2 mt-3 z-20"
+                  >
+                    <UserConnectionsPopover
+                      title="TA 关注的用户"
+                      :users="connectionDetails.following"
+                      :loading="connectionLoading.following"
+                      empty-text="还没有关注任何人"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -181,9 +228,10 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ModelCard from '@/components/ModelCard.vue'
+import UserConnectionsPopover from '@/components/UserConnectionsPopover.vue'
 import { usersApi } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import { useModelsStore } from '@/stores/models'
@@ -199,6 +247,15 @@ const isLoading = ref(true)
 const error = ref('')
 const activeTab = ref('models')
 const isFollowProcessing = ref(false)
+const activeConnectionType = ref('')
+const connectionDetails = reactive({
+  followers: [],
+  following: []
+})
+const connectionLoading = reactive({
+  followers: false,
+  following: false
+})
 
 const tabs = [
   { label: '发布模型', value: 'models' },
@@ -229,6 +286,60 @@ const quickStats = computed(() => [
   { key: 'following', label: '关注', value: profile.value?.followingCount ?? 0, iconPath: 'M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8.5z' },
   { key: 'favorites', label: '收藏', value: profile.value?.collectCount ?? 0, iconPath: 'M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.967a1 1 0 00.95.69h4.178c.969 0 1.371 1.24.588 1.81l-3.383 2.46a1 1 0 00-.364 1.118l1.287 3.966c.3.922-.755 1.688-1.54 1.118l-3.383-2.46a1 1 0 00-1.175 0l-3.383 2.46c-.784.57-1.838-.196-1.539-1.118l1.287-3.966a1 1 0 00-.364-1.118L2.547 9.394c-.783-.57-.38-1.81.588-1.81h4.178a1 1 0 00.95-.69l1.286-3.967z' }
 ])
+
+const resetConnectionState = () => {
+  activeConnectionType.value = ''
+  connectionDetails.followers = []
+  connectionDetails.following = []
+}
+
+const ensureConnectionDetails = async (type) => {
+  if (!profile.value) {
+    connectionDetails[type] = []
+    return
+  }
+  const ids = type === 'followers' ? profile.value.followers : profile.value.following
+  if (!ids || !ids.length) {
+    connectionDetails[type] = []
+    return
+  }
+
+  const cachedIds = connectionDetails[type].map((user) => user.id)
+  const sameLength = cachedIds.length === ids.length
+  const sameOrder = sameLength && cachedIds.every((id, index) => id === ids[index])
+  if (sameOrder && !connectionLoading[type]) {
+    return
+  }
+
+  connectionLoading[type] = true
+  try {
+    const { data } = await usersApi.lookup(ids)
+    connectionDetails[type] = data
+  } catch (error) {
+    console.warn('Failed to load user connections', error)
+  } finally {
+    connectionLoading[type] = false
+  }
+}
+
+const handleConnectionHover = (type) => {
+  ensureConnectionDetails(type)
+}
+
+const toggleConnectionPanel = async (type) => {
+  if (activeConnectionType.value === type) {
+    activeConnectionType.value = ''
+    return
+  }
+  await ensureConnectionDetails(type)
+  activeConnectionType.value = type
+}
+
+const closeConnectionPanel = (type) => {
+  if (activeConnectionType.value === type) {
+    activeConnectionType.value = ''
+  }
+}
 
 const fetchUserModels = async (authorId) => {
   try {
@@ -268,9 +379,17 @@ const loadProfile = async () => {
 watch(
   () => [route.params.id, authStore.user?.id],
   () => {
+    resetConnectionState()
     loadProfile()
   },
   { immediate: true }
+)
+
+watch(
+  () => profile.value?.id,
+  () => {
+    resetConnectionState()
+  }
 )
 
 const handleFollowToggle = async () => {

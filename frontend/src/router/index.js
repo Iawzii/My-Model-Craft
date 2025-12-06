@@ -7,7 +7,6 @@ import RegisterPage from '@/views/RegisterPage.vue'
 import UserSettings from '@/views/UserSettings.vue'
 import UserPage from '@/views/UserPage.vue'
 import ForgotPassword from '@/views/ForgotPassword.vue'
-import ResetPassword from '@/views/ResetPassword.vue'
 import UploadPage from '@/views/UploadPage.vue'
 // TODO: 添加其他路由
 
@@ -18,7 +17,6 @@ const routes = [
   { path: '/login', component: LoginPage },
   { path: '/register', component: RegisterPage },
   { path: '/forgot-password', component: ForgotPassword },
-  { path: '/reset-password', component: ResetPassword },
   { path: '/user/:id?', component: UserPage },
   { path: '/settings/user', component: UserSettings },
   { path: '/upload', component: UploadPage }
